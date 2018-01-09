@@ -28,9 +28,6 @@ parser.add_argument('--train_image_list', default='./trainImg/filelist.txt', hel
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
 parser.add_argument('--imageSize', type=int, default=128, help='the height / width of the input image to network')
-parser.add_argument('--nz', type=int, default=1000, help='size of the latent z vector')
-parser.add_argument('--ngf', type=int, default=64, help='number of the filter of generate network')
-parser.add_argument('--ndf', type=int, default=64, help='number of the filter of descriminator network')
 parser.add_argument('--niter', type=int, default=300, help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.0002, help='learning rate, default=0.0002')
 parser.add_argument('--decay_round', type=int, default=50, help='learning rate decay 0.5 each decay_round')
@@ -103,10 +100,6 @@ def main():
     assert dataset
 
     ngpu = int(opt.ngpu)  # 使用多少GPU
-    nz = int(opt.nz)  # 随机噪声的维数
-    ngf = int(opt.ngf)  # G网络的第一层的filter数量
-    ndf = int(opt.ndf)  # D网络的第一层的filter的数量
-    nc = 3  # 图片的channel数量
 
     #######################  获得G网络的对象  ####################
     Hnet = HidingNet(ngpu=ngpu)
@@ -133,7 +126,7 @@ def main():
     # real_label = 1
     # fake_label = 0
 
-    secImgPath = "E:\\pyCharm WorkSpace\\deep-steganography\\pytorch-Deep-Steganography\\secretImg\\test.jpg"
+    secImgPath = "../secretImg/test.jpg"
     secretImg = Image.open(secImgPath).convert('RGB')
     secretImg = to_tensor(secretImg)
 
