@@ -3,7 +3,7 @@ import torchvision.datasets as dset
 
 import utils.transformed as transforms
 
-from data.PreProcessedDataSet import HumanFaceDataSet
+from data.PreProcessedDataSet import PreProcessedDataSet
 
 class Get_dataset():
     def __init__(self,dataset_name,imageSize,data_dir,image_list_file):
@@ -27,12 +27,13 @@ class Get_dataset():
                                            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                                        ]))
 
-        elif self.dataset_name == 'imagenet':
-            dataset = HumanFaceDataSet(data_dir=self.data_dir,
+        elif self.dataset_name == 'test':
+            dataset = PreProcessedDataSet(data_dir=self.data_dir,
                                        image_list_file=self.image_list_file,
                                        transform=transforms.Compose([
                                            transforms.Resize(self.imageSize),
                                            transforms.ToTensor(),
+                                           transforms.ConcatSec(),
                                            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
                                        ]))
 

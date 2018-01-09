@@ -15,6 +15,7 @@ import torch
 import math
 import random
 from PIL import Image, ImageOps, ImageEnhance
+
 try:
     import accimage
 except ImportError:
@@ -41,6 +42,12 @@ def _is_numpy_image(img):
     return isinstance(img, np.ndarray) and (img.ndim in {2, 3})
 
 
+def concat_secretImg(originalPic):
+    resultPic=torch.cat([originalPic, secretImg], 0)
+    print(resultPic.size())
+    return resultPic
+
+
 def to_tensor(pic):
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
     See ``ToTensor`` for more details.
@@ -49,7 +56,7 @@ def to_tensor(pic):
     Returns:
         Tensor: Converted image.
     """
-    if not(_is_pil_image(pic) or _is_numpy_image(pic)):
+    if not (_is_pil_image(pic) or _is_numpy_image(pic)):
         raise TypeError('pic should be PIL Image or ndarray. Got {}'.format(type(pic)))
 
     if isinstance(pic, np.ndarray):
@@ -87,6 +94,11 @@ def to_tensor(pic):
         return img
 
 
+secImgPath = "E:\\pyCharm WorkSpace\\deep-steganography\\pytorch-Deep-Steganography\\secretImg\\test.jpg"
+secretImg = Image.open(secImgPath).convert('RGB')
+secretImg = to_tensor(secretImg)
+
+
 def to_pil_image(pic, mode=None):
     """Convert a tensor or an ndarray to PIL Image.
     See :class:`~torchvision.transforms.ToPIlImage` for more details.
@@ -97,7 +109,7 @@ def to_pil_image(pic, mode=None):
     Returns:
         PIL Image: Image converted to PIL Image.
     """
-    if not(_is_numpy_image(pic) or _is_tensor_image(pic)):
+    if not (_is_numpy_image(pic) or _is_tensor_image(pic)):
         raise TypeError('pic should be Tensor or ndarray. Got {}.'.format(type(pic)))
 
     npimg = pic
@@ -434,7 +446,7 @@ def adjust_hue(img, hue_factor):
     Returns:
         PIL Image: Hue adjusted image.
     """
-    if not(-0.5 <= hue_factor <= 0.5):
+    if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError('hue_factor is not in [-0.5, 0.5].'.format(hue_factor))
 
     if not _is_pil_image(img):
@@ -506,6 +518,13 @@ class Compose(object):
         return img
 
 
+class ConcatSec(object):
+    def __call__(self,pic):
+        return concat_secretImg(pic)
+
+
+
+
 class ToTensor(object):
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
     Converts a PIL Image or numpy.ndarray (H x W x C) in the range
@@ -535,6 +554,7 @@ class ToPILImage(object):
             ``int``, ``float``, ``short``).
     .. _PIL.Image mode: http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#modes
     """
+
     def __init__(self, mode=None):
         self.mode = mode
 
@@ -603,6 +623,7 @@ class Scale(Resize):
     """
     Note: This transform is deprecated in favor of Resize.
     """
+
     def __init__(self, *args, **kwargs):
         warnings.warn("The use of the transforms.Scale transform is deprecated, " +
                       "please use transforms.Resize instead.")
@@ -838,6 +859,7 @@ class RandomSizedCrop(RandomResizedCrop):
     """
     Note: This transform is deprecated in favor of RandomResizedCrop.
     """
+
     def __init__(self, *args, **kwargs):
         warnings.warn("The use of the transforms.RandomSizedCrop transform is deprecated, " +
                       "please use transforms.RandomResizedCrop instead.")
@@ -940,6 +962,7 @@ class ColorJitter(object):
         hue(float): How much to jitter hue. hue_factor is chosen uniformly from
             [-hue, hue]. Should be >=0 and <= 0.5.
     """
+
     def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
         self.brightness = brightness
         self.contrast = contrast
