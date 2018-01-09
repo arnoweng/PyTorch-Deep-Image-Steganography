@@ -12,19 +12,22 @@ import torch.nn.parallel
 import torch.optim as optim
 import torch.utils.data
 import torchvision.utils as vutils
+from PIL import Image
 from torch.autograd import Variable
 
 from data.read_data import Get_dataset
-from models.Discriminator import _netD
-from models.Generator import _netG
+from models.Discriminator import Discriminator
+from models.HidingNet import HidingNet
+from models.RevealNet import RevealNet
+from utils.transformed import to_tensor
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', default="humanface", help='cifar10 | lsun | imagenet | folder | lfw | fake')
-parser.add_argument('--dataroot', default="./face", help='path to dataset')
-parser.add_argument('--train_image_list', default='./data/filelist.txt', help='pics path lists')
+parser.add_argument('--dataset', default="test", help='cifar10 | lsun | imagenet | folder | lfw | fake')
+parser.add_argument('--dataroot', default="./trainImg", help='path to dataset')
+parser.add_argument('--train_image_list', default='./trainImg/filelist.txt', help='pics path lists')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
-parser.add_argument('--imageSize', type=int, default=64, help='the height / width of the input image to network')
+parser.add_argument('--imageSize', type=int, default=128, help='the height / width of the input image to network')
 parser.add_argument('--nz', type=int, default=1000, help='size of the latent z vector')
 parser.add_argument('--ngf', type=int, default=64, help='number of the filter of generate network')
 parser.add_argument('--ndf', type=int, default=64, help='number of the filter of descriminator network')
@@ -32,14 +35,14 @@ parser.add_argument('--niter', type=int, default=300, help='number of epochs to 
 parser.add_argument('--lr', type=float, default=0.0002, help='learning rate, default=0.0002')
 parser.add_argument('--decay_round', type=int, default=50, help='learning rate decay 0.5 each decay_round')
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
-parser.add_argument('--cuda', type=bool, default=True, help='enables cuda')
+parser.add_argument('--cuda', type=bool, default=False, help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
 parser.add_argument('--netG', default='', help="path to netG (to continue training)")
 parser.add_argument('--netD', default='', help="path to netD (to continue training)")
 parser.add_argument('--outpics', default='./pics', help='folder to output images')
 parser.add_argument('--outckpts', default='./checkpoints', help='folder to output checkpoints')
 parser.add_argument('--outlogs', default='./logs', help='folder to output images')
-parser.add_argument('--manualSeed', type=int, help='manual seed')
+parser.add_argument('--beta', type=float, default=0.3, help='hyper parameter of β ')
 
 
 def adjust_learning_rate(optimizers, epoch):
@@ -64,7 +67,7 @@ def weights_init(m):
 
 def main():
     ################ define global parameters #################
-    global opt, label, real_label, fake_label, fixed_noise, noise, optimizerD, optimizerG, ndf, ngf, nz, nc, input
+    global opt, label, real_label, fake_label, fixed_cover_with_sec, noise, optimizerH, optimizerR, ndf, ngf, nz, nc, input, secretLabel, originalLabel, secretImg
 
     #################  输出参数   ###############
     opt = parser.parse_args()
@@ -106,133 +109,114 @@ def main():
     nc = 3  # 图片的channel数量
 
     #######################  获得G网络的对象  ####################
-    netG = _netG(ngpu=ngpu, nz=nz, ngf=ngf, nc=nc)
-    netG.apply(weights_init)
-    if opt.netG != '':
-        netG.load_state_dict(torch.load(opt.netG))
-    print(netG)
+    Hnet = HidingNet(ngpu=ngpu)
+    Hnet.apply(weights_init)
+    if opt.Hnet != '':
+        Hnet.load_state_dict(torch.load(opt.Hnet))
+    print(Hnet)
 
     ######################   获得D网络的对象  ######################
-    netD = _netD(ngpu=ngpu, ndf=ndf, nc=nc)
-    netD.apply(weights_init)
-    if opt.netD != '':
-        netD.load_state_dict(torch.load(opt.netD))
-    print(netD)
+    Rnet = RevealNet(ngpu=ngpu)
+    Rnet.apply(weights_init)
+    if opt.Rnet != '':
+        Rnet.load_state_dict(torch.load(opt.Rnet))
+    print(Rnet)
 
     input = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)
-    noise = torch.FloatTensor(opt.batchSize, nz, 1, 1)
-    # 固定的噪声，用户生成测试用的图片，每个epoch训练完的网络使用相同的噪声来生成100张照片
-    fixed_noise = torch.FloatTensor(100, nz, 1, 1).normal_(0, 1)
-    label = torch.FloatTensor(opt.batchSize)
-    real_label = 1
-    fake_label = 0
+
+    originalLabel = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)  # 原始的图片作为label
+    secretLabel = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)  # 藏入的图片的label
+
+    # 固定的coverImg和secretImg cat到一起，用户生成测试用的图片，每个epoch训练完的网络使用相同的噪声来生成100张照片
+    fixed_cover_with_sec = torch.FloatTensor(1, 6, 128, 128)
+
+    # real_label = 1
+    # fake_label = 0
+
+    secImgPath = "E:\\pyCharm WorkSpace\\deep-steganography\\pytorch-Deep-Steganography\\secretImg\\test.jpg"
+    secretImg = Image.open(secImgPath).convert('RGB')
+    secretImg = to_tensor(secretImg)
 
     ################   定义loss函数     ########################
-    mycriterion = nn.BCELoss()
+    mycriterion = nn.MSELoss()
 
     ##########################    将计算图放置到GPU     ######################
     if opt.cuda:
-        netD.cuda()
-        netG.cuda()
+        Hnet.cuda()
+        Rnet.cuda()
         mycriterion.cuda()
-        input, label = input.cuda(), label.cuda()
-        noise, fixed_noise = noise.cuda(), fixed_noise.cuda()
+        input, originalLabel = input.cuda(), originalLabel.cuda()
+        noise = noise.cuda()
+        secretLabel.cuda()
 
-    fixed_noise = Variable(fixed_noise)
+    # fixed_noise = Variable(fixed_noise)
 
     # setup optimizer
-    optimizerD = optim.Adam(netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
-    optimizerG = optim.Adam(netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+    optimizerH = optim.Adam(Hnet.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+    optimizerR = optim.Adam(Rnet.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 
     print("training is beginning .......................")
     traindataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize, shuffle=True,
                                                   num_workers=int(opt.workers))
 
     for epoch in range(opt.niter):
-        adjust_learning_rate([optimizerG, optimizerD], epoch)
+        adjust_learning_rate([optimizerH, optimizerR], epoch)
 
-        train(traindataloader, epoch, netD=netD, netG=netG, criterion=mycriterion)
+        train(traindataloader, epoch, Hnet=Hnet, Rnet=Rnet, criterion=mycriterion)
 
 
-def train(train_loader, epoch, netD, netG, criterion):
+def train(train_loader, epoch, Hnet, Rnet, criterion):
     batch_time = AverageMeter()
     data_time = AverageMeter()
-    Glosses = AverageMeter()
-    Dlosses = AverageMeter()
+    Hlosses = AverageMeter()
+    Rlosses = AverageMeter()
+    SumLosses = AverageMeter()
+
     # switch to train mode
-    netD.train()
-    netG.train()
+    Hnet.train()
+    Rnet.train()
 
     start_time = time.time()
     log = ''
     for i, data in enumerate(train_loader, 0):
         data_time.update(time.time() - start_time)
-        ############################
-        # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
-        ###########################
-        # train with real
-        netD.zero_grad()
-        real_cpu, _ = data
-        batch_size = real_cpu.size(0)
+        concatPic, originalPic = data
+        batch_size = concatPic.size(0)
         if opt.cuda:
-            real_cpu = real_cpu.cuda()
-        input.resize_as_(real_cpu).copy_(real_cpu)
-        label.resize_(batch_size).fill_(real_label)
+            concatPic = concatPic.cuda()
+        input.resize_as_(concatPic).copy_(concatPic)
+        originalLabel.resize_(batch_size).fill_(originalPic)
         inputv = Variable(input)
-        labelv = Variable(label)
+        labelv = Variable(originalLabel)
 
-        output = netD(inputv)
-        errD_real = criterion(output, labelv)
-        errD_real.backward()
-        D_x = output.data.mean()
+        ContainerImg = Hnet(inputv)  # 得到藏有secretimg的containerImg
+        errH_original = criterion(ContainerImg, labelv)  # Hiding net的重建误差
+        Hlosses.update(errH_original)  # 纪录H loss值
 
-        # train with fake
-        noise.resize_(batch_size, nz, 1, 1).normal_(0, 1)
-        noisev = Variable(noise)
-        fake = netG(noisev)
-        labelv = Variable(label.fill_(fake_label))
+        Rnet.zero_grad()
+        secretLabel.resize_(batch_size).fill_(secretImg)
+        labelv = Variable(secretLabel)  # label 为secret图片
 
-        output = netD(fake.detach())
-        errD_fake = criterion(output, labelv)
-        errD_fake.backward()
-        D_G_z1 = output.data.mean()
-        errD = errD_real + errD_fake
-        optimizerD.step()
+        RevSecPic = Rnet(ContainerImg)
+        errR_secret = criterion(RevSecPic, labelv)
+        errR_secret.backward()
+        optimizerR.step()  # 更新Reveal 网络
+        Rlosses.update(errR_secret)
 
-        Dlosses.update(errD)
+        Hnet.zero_grad()
+        err_sum = errH_original + opt.beta * errR_secret
+        err_sum.backward()
+        optimizerH.setp()  # 更新Hiding网络
 
-        ############################
-        # (2) Update G network: maximize log(D(G(z)))
-        ###########################
-        netG.zero_grad()
-        labelv = Variable(label.fill_(real_label))  # fake labels are real for generator cost
-        output = netD(fake)
-        errG = criterion(output, labelv)
-        errG.backward()
-        D_G_z2 = output.data.mean()
-        optimizerG.step()
-
-        ############################
-        # (2) Update G network for the second time: maximize log(D(G(z)))
-        ###########################
-        fake = netG(noisev)
-        netG.zero_grad()
-        labelv = Variable(label.fill_(real_label))  # fake labels are real for generator cost
-        output = netD(fake)
-        errG = criterion(output, labelv)
-        errG.backward()
-        D_G_z3 = output.data.mean()
-        optimizerG.step()
-
-        Glosses.update(errG)
+        SumLosses.update(err_sum)
 
         # 更新一个batch的时间
         batch_time.update(time.time() - start_time)
         start_time = time.time()
         # 输出信息
-        log = '[%d/%d][%d/%d]\t Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f / %.4f /%.4f \tdatatime: %.4f \tbatchtime: %.4f' % (
-        epoch, opt.niter, i, len(train_loader),
-        errD.data[0], errG.data[0], D_x, D_G_z1, D_G_z2, D_G_z3, data_time.val, batch_time.val)
+        log = '[%d/%d][%d/%d]\t Loss_H: %.4f Loss_R: %.4f Loss_sum: %.4f \tdatatime: %.4f \tbatchtime: %.4f' % (
+            epoch, opt.niter, i, len(train_loader),
+            Hlosses.val, Rlosses.val, SumLosses.val, data_time.val, batch_time.val)
         print(log)
         # 写日志
         logPath = opt.outlogs + '/%s_%d_%d_log.txt' % (opt.dataset, opt.batchSize, opt.imageSize)
@@ -242,17 +226,21 @@ def train(train_loader, epoch, netD, netG, criterion):
         with open(logPath, 'a+') as f:
             f.writelines(log + '\n')
 
-    ######################################   存储记录等相关操作       #######################################3
+        ######################################   存储记录等相关操作       #######################################3
 
-    # 5个epoch就生成一张图片
+        # 5个epoch就生成一张图片
+        if epoch % 1 == 0 and i == 0:
+            containers = Hnet(concatPic)
+            vutils.save_image(containers.data, '%s/containers_epoch_%03d.png' % (opt.outpics, epoch), nrow=10,
+                              normalize=True)
+            revSecPics = Rnet(containers)
+            vutils.save_image(revSecPics.data, '%s/RevSecPics_epoch_%03d.png' % (opt.outpics, epoch), nrow=10,
+                              normalize=True)
+
     if epoch % 5 == 0:
-        # vutils.save_image(real_cpu,'%s/real_samples_epoch_%03d_batch%03d.png' % (opt.outpics, epoch,i), normalize=True)
-        fake = netG(fixed_noise)
-        vutils.save_image(fake.data, '%s/fake_epoch_%03d.png' % (opt.outpics, epoch), nrow=10, normalize=True)
-
-    # do checkpointing
-    torch.save(netG.state_dict(), '%s/netG_epoch_%d.pth' % (opt.outckpts, epoch))
-    torch.save(netD.state_dict(), '%s/netD_epoch_%d.pth' % (opt.outckpts, epoch))
+        # do checkpointing
+        torch.save(Hnet.state_dict(), '%s/netG_epoch_%d.pth' % (opt.outckpts, epoch))
+        torch.save(Rnet.state_dict(), '%s/netD_epoch_%d.pth' % (opt.outckpts, epoch))
 
     print("one epoch time is===========================================", batch_time.sum)
 
