@@ -231,10 +231,10 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
         # 5个epoch就生成一张图片
         if epoch % 1 == 0 and i == 0:
             containers = Hnet(concatPic)
-            vutils.save_image(containers.data, '%s/containers_epoch_%03d.png' % (opt.outpics, epoch), nrow=10,
+            vutils.save_image(containers.data, '%s/containers_epoch_%03d.png' % (opt.outpics, epoch), nrow=8,
                               normalize=True)
             revSecPics = Rnet(containers)
-            vutils.save_image(revSecPics.data, '%s/RevSecPics_epoch_%03d.png' % (opt.outpics, epoch), nrow=10,
+            vutils.save_image(revSecPics.data, '%s/RevSecPics_epoch_%03d.png' % (opt.outpics, epoch), nrow=8,
                               normalize=True)
 
     if epoch % 5 == 0:
