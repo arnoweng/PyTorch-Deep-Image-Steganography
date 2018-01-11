@@ -42,10 +42,6 @@ def _is_numpy_image(img):
     return isinstance(img, np.ndarray) and (img.ndim in {2, 3})
 
 
-def concat_secretImg(originalPic):
-    resultPic=torch.cat([originalPic, secretImg], 0)
-    return resultPic
-
 
 def to_tensor(pic):
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
@@ -93,9 +89,7 @@ def to_tensor(pic):
         return img
 
 
-secImgPath = "./secretImg/test.jpg"
-secretImg = Image.open(secImgPath).convert('RGB')
-secretImg = to_tensor(secretImg)
+
 
 
 def to_pil_image(pic, mode=None):
@@ -515,13 +509,6 @@ class Compose(object):
         for t in self.transforms:
             img = t(img)
         return img
-
-
-class ConcatSec(object):
-    def __call__(self,pic):
-        return concat_secretImg(pic)
-
-
 
 
 class ToTensor(object):
