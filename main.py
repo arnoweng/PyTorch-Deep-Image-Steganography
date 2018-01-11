@@ -24,13 +24,13 @@ from utils.transformed import to_tensor
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default="test", help='cifar10 | lsun | imagenet | folder | lfw | fake')
 parser.add_argument('--dataroot', default="/scratch/wxy/ImageNet/dataset/", help='path to dataset')
-parser.add_argument('--train_image_list', default='./data/image_list.txt', help='pics path lists')
+parser.add_argument('--train_image_list', default='./data/sub_image_list.txt', help='pics path lists')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
 parser.add_argument('--imageSize', type=int, default=128, help='the height / width of the input image to network')
 parser.add_argument('--niter', type=int, default=300, help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate, default=0.0002')
-parser.add_argument('--decay_round', type=int, default=5, help='learning rate decay 0.5 each decay_round')
+parser.add_argument('--decay_round', type=int, default=20, help='learning rate decay 0.5 each decay_round')
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
 parser.add_argument('--cuda', type=bool, default=True, help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
@@ -39,7 +39,7 @@ parser.add_argument('--Rnet', default='', help="path to Revealnet (to continue t
 parser.add_argument('--outpics', default='./training/pics', help='folder to output images')
 parser.add_argument('--outckpts', default='./training/checkpoints', help='folder to output checkpoints')
 parser.add_argument('--outlogs', default='./training/logs', help='folder to output images')
-parser.add_argument('--beta', type=float, default=1.0, help='hyper parameter of β ')
+parser.add_argument('--beta', type=float, default=0.5, help='hyper parameter of β ')
 
 
 def adjust_learning_rate(optimizers, epoch):
@@ -204,11 +204,16 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
         # 更新一个batch的时间
         batch_time.update(time.time() - start_time)
         start_time = time.time()
+
         # 输出信息
-        log = '[%d/%d][%d/%d]\t Loss_H: %.4f Loss_R: %.4f Loss_sum: %.4f \tdatatime: %.4f \tbatchtime: %.4f' % (
+        log = '[%d/%d][%d/%d]\tLoss_H: %.4f Loss_R: %.4f Loss_sum: %.4f \tdatatime: %.4f \tbatchtime: %.4f' % (
             epoch, opt.niter, i, len(train_loader),
             Hlosses.val, Rlosses.val, SumLosses.val, data_time.val, batch_time.val)
-        print(log)
+
+        # 屏幕打印日志信息
+        if i % 5 == 0:
+            print(log)
+
         # 写日志
         logPath = opt.outlogs + '/%s_%d_%d_log.txt' % (opt.dataset, opt.batchSize, opt.imageSize)
         if not os.path.exists(logPath):
@@ -222,11 +227,17 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
         # 5个epoch就生成一张图片
         if epoch % 1 == 0 and i % 100 == 0:
             showContainer = torch.cat([originalLabelv.data, ContainerImg.data], 0)
-            vutils.save_image(showContainer, '%s/containers_epoch%03d_batch%04d.png' % (opt.outpics, epoch, i),
-                              nrow=this_batch_size,
-                              normalize=True)
+            # vutils.save_image(showContainer, '%s/containers_epoch%03d_batch%04d.png' % (opt.outpics, epoch, i),
+            #                   nrow=this_batch_size,
+            #                   normalize=True)
             showReveal = torch.cat([secretLabelv.data, RevSecPic.data], 0)
-            vutils.save_image(showReveal, '%s/RevSecPics_epoch%03d_batch%04d.png' % (opt.outpics, epoch, i),
+
+            # vutils.save_image(showReveal, '%s/RevSecPics_epoch%03d_batch%04d.png' % (opt.outpics, epoch, i),
+            #                   nrow=this_batch_size,
+            #                   normalize=True)
+
+            resultImg = torch.cat([showContainer, showReveal], 0)
+            vutils.save_image(resultImg, '%s/ResultPics_epoch%03d_batch%04d.png' % (opt.outpics, epoch, i),
                               nrow=this_batch_size,
                               normalize=True)
 
