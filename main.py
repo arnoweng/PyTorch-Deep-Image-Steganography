@@ -26,7 +26,7 @@ parser.add_argument('--dataset', default="test", help='cifar10 | lsun | imagenet
 parser.add_argument('--dataroot', default="/scratch/wxy/ImageNet/dataset/", help='path to dataset')
 parser.add_argument('--train_image_list', default='./data/image_list.txt', help='pics path lists')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
-parser.add_argument('--batchSize', type=int, default=4, help='input batch size')
+parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
 parser.add_argument('--imageSize', type=int, default=128, help='the height / width of the input image to network')
 parser.add_argument('--niter', type=int, default=300, help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.0002, help='learning rate, default=0.0002')
@@ -36,9 +36,9 @@ parser.add_argument('--cuda', type=bool, default=True, help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
 parser.add_argument('--Hnet', default='', help="path to Hidingnet (to continue training)")
 parser.add_argument('--Rnet', default='', help="path to Revealnet (to continue training)")
-parser.add_argument('--outpics', default='./pics', help='folder to output images')
-parser.add_argument('--outckpts', default='./checkpoints', help='folder to output checkpoints')
-parser.add_argument('--outlogs', default='./logs', help='folder to output images')
+parser.add_argument('--outpics', default='./training/pics', help='folder to output images')
+parser.add_argument('--outckpts', default='./training/checkpoints', help='folder to output checkpoints')
+parser.add_argument('--outlogs', default='./training/logs', help='folder to output images')
 parser.add_argument('--beta', type=float, default=1.0, help='hyper parameter of β ')
 
 
@@ -76,11 +76,18 @@ def main():
 
     ############  构建结果保存的文件夹 #############
     try:
-        os.makedirs(opt.outckpts)
-        os.makedirs(opt.outpics)
-        os.makedirs(opt.outlogs)
+        cur_time = time.strftime('%Y-%m-%d-%H_%M_%S', time.localtime())
+        opt.outckpts += cur_time
+        opt.outpics += cur_time
+        opt.outlogs += cur_time
+        if not os.path.exists(opt.outckpts):
+            os.makedirs(opt.outckpts)
+        if not os.path.exists(opt.outpics):
+            os.makedirs(opt.outpics)
+        if not os.path.exists(opt.outlogs):
+            os.makedirs(opt.outlogs)
     except OSError:
-        pass
+        print("mkdir failed   XXXXXXXXXXXXXXXXXXXXX")
     ###########################################
 
     cudnn.benchmark = True
@@ -108,20 +115,11 @@ def main():
         Rnet.load_state_dict(torch.load(opt.Rnet))
     print(Rnet)
 
-    input = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)
+    # input = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)
+    #
+    # originalLabel = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)  # 原始的图片作为label
+    # secretLabel = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)  # 藏入的图片的label
 
-    originalLabel = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)  # 原始的图片作为label
-    secretLabel = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)  # 藏入的图片的label
-
-    # # 固定的coverImg和secretImg cat到一起，用户生成测试用的图片，每个epoch训练完的网络使用相同的噪声来生成100张照片
-    # fixed_cover_with_sec = torch.FloatTensor(1, 6, 128, 128)
-
-    # real_label = 1
-    # fake_label = 0
-
-    secImgPath = "./secretImg/test.jpg"
-    secretImg = Image.open(secImgPath).convert('RGB')
-    secretImg = to_tensor(secretImg)
 
     ################   定义loss函数     ########################
     mycriterion = nn.MSELoss(size_average=False)
@@ -168,49 +166,48 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
 
         Hnet.zero_grad()
         Rnet.zero_grad()
-        concatPic, originalPic = data
-        batch_size = concatPic.size(0)
+        allPics, _ = data
+        this_batch_size = allPics.size(0)/2
+        #前面一半图片作为cover image ，后面一半图片作为secretImg
+        coverImg = allPics[0:this_batch_size,:,:,:]
+        secretImg = allPics[this_batch_size:this_batch_size*2,:,:,:]
+
+        #将图片concat到一起，得到六通道图片作为H网络的输入
+        concatImg= torch.cat([coverImg,secretImg],dim=1)
+
+        # 数据放入GPU
         if opt.cuda:
-            concatPic = concatPic.cuda()
-            originalPic = originalPic.cuda()
+            coverImg = coverImg.cuda()
+            secretImg = secretImg.cuda()
+            concatImg=concatImg.cuda()
 
-        input.resize_as_(concatPic).copy_(concatPic)
 
-        inputv = Variable(input)
-        originalLabelv = Variable(originalPic)
 
-        ContainerImg = Hnet(inputv)  # 得到藏有secretimg的containerImg
+        Hinputv = Variable(concatImg)
+        originalLabelv = Variable(coverImg)
+
+        ContainerImg = Hnet(Hinputv)  # 得到藏有secretimg的containerImg
         errH_original = criterion(ContainerImg, originalLabelv)  # Hiding net的重建误差
-        errH_original.backward(retain_graph=True)
+        Hlosses.update(errH_original.data[0])  # 纪录H loss值
 
-        Hlosses.update(errH_original)  # 纪录H loss值
+        # errH_original.backward()
+        # optimizerH.step()  # 更新Hiding网络
 
         RevSecPic = Rnet(ContainerImg)
-        secretPic = torch.stack([secretImg])
-        if opt.cuda:
-            RevSecPic = RevSecPic.cuda()
-            secretPic = secretPic.cuda()
+        secretLabelv = Variable(secretImg)  # label 为secret图片
+        errR_secret = criterion(RevSecPic, secretLabelv)
+        Rlosses.update(errR_secret.data[0])  # 纪录R loss值
 
-        secretLabel = secretPic.expand(opt.batchSize, secretPic.size()[1], secretPic.size()[2], secretPic.size()[3])
-        labelv = Variable(secretLabel)  # label 为secret图片
-        errR_secret = criterion(RevSecPic, labelv)
-        Rlosses.update(errR_secret)  # 纪录R loss值
-
-        betaerrR_secret=opt.beta * errR_secret
-        betaerrR_secret.backward()
+        # R网络的loss  乘以一个超参 β
+        betaerrR_secret = opt.beta * errR_secret
 
 
-        optimizerH.step()  # 更新Hiding网络
-        optimizerR.step()  # 更新R
 
         err_sum = errH_original + betaerrR_secret
-
-        SumLosses.update(err_sum)
-
-
-
-
-
+        SumLosses.update(err_sum.data[0])
+        err_sum.backward()
+        optimizerH.step()
+        optimizerR.step()
 
         # 更新一个batch的时间
         batch_time.update(time.time() - start_time)
@@ -232,15 +229,13 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
 
         # 5个epoch就生成一张图片
         if epoch % 1 == 0 and i % 100 == 0:
-            print(ContainerImg.data.size())
-            print(originalLabelv.data.size())
-            showContainer=torch.cat([originalLabelv.data, ContainerImg.data],0)
-            print(showContainer.size())
-            vutils.save_image(showContainer, '%s/containers_epoch_%03d_batch%03d.png' % (opt.outpics, epoch, i),
-                              nrow=showContainer.size()[0]/2,
+            showContainer = torch.cat([originalLabelv.data, ContainerImg.data], 0)
+            vutils.save_image(showContainer, '%s/containers_epoch%03d_batch%04d.png' % (opt.outpics, epoch, i),
+                              nrow=this_batch_size,
                               normalize=True)
-            vutils.save_image(RevSecPic.data, '%s/RevSecPics_epoch_%03d_batch%03d.png' % (opt.outpics, epoch, i),
-                              nrow=8,
+            showReveal = torch.cat([secretLabelv.data, RevSecPic.data], 0)
+            vutils.save_image(showReveal, '%s/RevSecPics_epoch%03d_batch%04d.png' % (opt.outpics, epoch, i),
+                              nrow=this_batch_size,
                               normalize=True)
 
     if epoch % 5 == 0:

@@ -12,7 +12,7 @@
       <paths name="pkumi1@pc">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/pytorch-Deep-Steganography" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

@@ -11,7 +11,7 @@ from utils.transformed import concat_secretImg
 
 
 class PreProcessedDataSet(Dataset):
-    def __init__(self, data_dir, image_list_file,  transform=None):
+    def __init__(self, data_dir, image_list_file, transform=None):
         """
         :param data_dir: Path to data directory.
         :param image_list_file: Path to the file containing images
@@ -25,7 +25,7 @@ class PreProcessedDataSet(Dataset):
             for line in f:
                 items = line.split()
                 image_name = items[0]
-                label = -1  # 人脸数据集没有label
+                label = -1  # 图片数据不需要label
                 image_name = os.path.join(data_dir, image_name)
                 image_names.append(image_name)
                 labels.append(label)
@@ -41,13 +41,10 @@ class PreProcessedDataSet(Dataset):
         """
         image_name = self.image_names[index]
         image = Image.open(image_name).convert('RGB')
-        label = image  # label即为原始图片
+        label = -1 # 图片数据不需要label
 
         if self.transform is not None:
             image = self.transform(image)
-            label = image
-            image=concat_secretImg(image)
-
 
         return image, label
 
@@ -55,10 +52,8 @@ class PreProcessedDataSet(Dataset):
         return len(self.image_names)
 
 
-
-
 def main():
-   a= PreProcessedDataSet(data_dir="../secretImg",image_list_file="../data/filelist.txt").__getitem__(0)
+    a = PreProcessedDataSet(data_dir="../secretImg", image_list_file="../data/filelist.txt").__getitem__(0)
 
 
 if __name__ == '__main__':
