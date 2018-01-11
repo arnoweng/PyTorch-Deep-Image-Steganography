@@ -2,12 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c83fd92f-5086-4c2f-ad9e-c99f17cbd7d3" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/deployment.xml" afterPath="$PROJECT_DIR$/.idea/deployment.xml" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change beforePath="$PROJECT_DIR$/data/PreProcessedDataSet.py" afterPath="$PROJECT_DIR$/data/PreProcessedDataSet.py" />
-      <change beforePath="$PROJECT_DIR$/data/read_data.py" afterPath="$PROJECT_DIR$/data/read_data.py" />
       <change beforePath="$PROJECT_DIR$/main.py" afterPath="$PROJECT_DIR$/main.py" />
-      <change beforePath="$PROJECT_DIR$/test.py" afterPath="$PROJECT_DIR$/test.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -23,43 +20,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="PreProcessedDataSet.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/data/PreProcessedDataSet.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="255">
-              <caret line="43" column="21" lean-forward="true" selection-start-line="43" selection-start-column="21" selection-end-line="43" selection-end-column="21" />
-              <folding>
-                <element signature="e#20#56#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="transformed.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/utils/transformed.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1560">
-              <caret line="93" column="0" lean-forward="true" selection-start-line="93" selection-start-column="0" selection-end-line="93" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="main.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2574">
-              <caret line="120" column="100" lean-forward="true" selection-start-line="117" selection-start-column="3" selection-end-line="120" selection-end-column="100" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="read_data.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/data/read_data.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="463">
-              <caret line="30" column="65" lean-forward="true" selection-start-line="30" selection-start-column="65" selection-end-line="30" selection-end-column="65" />
+            <state relative-caret-position="481">
+              <caret line="128" column="19" lean-forward="true" selection-start-line="128" selection-start-column="19" selection-end-line="128" selection-end-column="19" />
               <folding />
             </state>
           </provider>
@@ -94,14 +59,12 @@
         <option value="$PROJECT_DIR$/data/HumanFaceDataSet.py" />
         <option value="$PROJECT_DIR$/data/filelist.txt" />
         <option value="$PROJECT_DIR$/trainImg/filelist.txt" />
-        <option value="$PROJECT_DIR$/utils/transformed.py" />
         <option value="$PROJECT_DIR$/models/HidingNet.py" />
         <option value="$PROJECT_DIR$/models/Discriminator.py" />
         <option value="&lt;8a355133-83e8-45c0-8060-3e5eead59aa9&gt;/pytorch-Deep-Steganography/utils/transformed.py" />
         <option value="&lt;8a355133-83e8-45c0-8060-3e5eead59aa9&gt;/pytorch-Deep-Steganography/data/read_data.py" />
         <option value="&lt;8a355133-83e8-45c0-8060-3e5eead59aa9&gt;/pytorch-Deep-Steganography/data/PreProcessedDataSet.py" />
         <option value="&lt;8a355133-83e8-45c0-8060-3e5eead59aa9&gt;/pytorch-Deep-Steganography/main.py" />
-        <option value="&lt;744b6404-c5b9-452a-9761-419b7bfd802c&gt;/pytorch-Deep-Steganography/main.py" />
         <option value="&lt;61970c27-6fdc-4623-a3e0-6793bc79c2dd&gt;/pytorch-Deep-Steganography/models/HidingNet.py" />
         <option value="$PROJECT_DIR$/models/RevealNet.py" />
         <option value="$PROJECT_DIR$/test.py" />
@@ -110,6 +73,9 @@
         <option value="$PROJECT_DIR$/data/read_data.py" />
         <option value="$PROJECT_DIR$/data/PreProcessedDataSet.py" />
         <option value="$PROJECT_DIR$/main.py" />
+        <option value="$PROJECT_DIR$/utils/transformed.py" />
+        <option value="&lt;744b6404-c5b9-452a-9761-419b7bfd802c&gt;/pytorch-Deep-Steganography/data/PreProcessedDataSet.py" />
+        <option value="&lt;744b6404-c5b9-452a-9761-419b7bfd802c&gt;/pytorch-Deep-Steganography/main.py" />
       </list>
     </option>
   </component>
@@ -179,16 +145,6 @@
             <path>
               <item name="pytorch-Deep-Steganography" type="b2602c69:ProjectViewProjectNode" />
               <item name="pytorch-Deep-Steganography" type="462c0819:PsiDirectoryNode" />
-              <item name="secretImg" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="pytorch-Deep-Steganography" type="b2602c69:ProjectViewProjectNode" />
-              <item name="pytorch-Deep-Steganography" type="462c0819:PsiDirectoryNode" />
-              <item name="trainImg" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="pytorch-Deep-Steganography" type="b2602c69:ProjectViewProjectNode" />
-              <item name="pytorch-Deep-Steganography" type="462c0819:PsiDirectoryNode" />
               <item name="utils" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
@@ -200,7 +156,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="WebServerToolWindowFactoryState" value="true" />
     <property name="last_opened_file_path" value="D:/software/Git/git-cmd.exe" />
     <property name="settings.editor.selected.configurable" value="vcs.Git" />
     <property name="WebServerToolWindowPanel.toolwindow.show.size" value="false" />
@@ -326,10 +282,12 @@
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="File Transfer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.09748083" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.11500548" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Remote Host" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18802084" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21666667" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Docker" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
@@ -341,8 +299,6 @@
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="File Transfer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.09748083" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
-      <window_info id="Remote Host" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25989583" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32968238" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -359,7 +315,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/data/PreProcessedDataSet.py</url>
-          <line>41</line>
+          <line>40</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -661,16 +617,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/utils/transformed.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1560">
-          <caret line="93" column="0" lean-forward="true" selection-start-line="93" selection-start-column="0" selection-end-line="93" selection-end-column="0" />
+        <state relative-caret-position="182">
+          <caret line="511" column="0" lean-forward="true" selection-start-line="511" selection-start-column="0" selection-end-line="511" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2574">
-          <caret line="120" column="100" lean-forward="true" selection-start-line="117" selection-start-column="3" selection-end-line="120" selection-end-column="100" />
+        <state relative-caret-position="481">
+          <caret line="128" column="19" lean-forward="true" selection-start-line="128" selection-start-column="19" selection-end-line="128" selection-end-column="19" />
           <folding />
         </state>
       </provider>

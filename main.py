@@ -29,8 +29,8 @@ parser.add_argument('--workers', type=int, help='number of data loading workers'
 parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
 parser.add_argument('--imageSize', type=int, default=128, help='the height / width of the input image to network')
 parser.add_argument('--niter', type=int, default=300, help='number of epochs to train for')
-parser.add_argument('--lr', type=float, default=0.0002, help='learning rate, default=0.0002')
-parser.add_argument('--decay_round', type=int, default=50, help='learning rate decay 0.5 each decay_round')
+parser.add_argument('--lr', type=float, default=0.001, help='learning rate, default=0.0002')
+parser.add_argument('--decay_round', type=int, default=5, help='learning rate decay 0.5 each decay_round')
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
 parser.add_argument('--cuda', type=bool, default=True, help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
@@ -120,7 +120,6 @@ def main():
     # originalLabel = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)  # 原始的图片作为label
     # secretLabel = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)  # 藏入的图片的label
 
-
     ################   定义loss函数     ########################
     mycriterion = nn.MSELoss(size_average=False)
 
@@ -129,10 +128,6 @@ def main():
         Hnet.cuda()
         Rnet.cuda()
         mycriterion.cuda()
-        input, originalLabel = input.cuda(), originalLabel.cuda()
-        secretLabel.cuda()
-
-    # fixed_noise = Variable(fixed_noise)
 
     # setup optimizer
     optimizerH = optim.Adam(Hnet.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
@@ -160,28 +155,27 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
     Rnet.train()
 
     start_time = time.time()
-    log = ''
     for i, data in enumerate(train_loader, 0):
         data_time.update(time.time() - start_time)
 
         Hnet.zero_grad()
         Rnet.zero_grad()
         allPics, _ = data
-        this_batch_size = allPics.size(0)/2
-        #前面一半图片作为cover image ，后面一半图片作为secretImg
-        coverImg = allPics[0:this_batch_size,:,:,:]
-        secretImg = allPics[this_batch_size:this_batch_size*2,:,:,:]
+        this_batch_size = int(allPics.size(0) / 2)
 
-        #将图片concat到一起，得到六通道图片作为H网络的输入
-        concatImg= torch.cat([coverImg,secretImg],dim=1)
+
+        # 前面一半图片作为cover image ，后面一半图片作为secretImg
+        coverImg = allPics[0:this_batch_size, :, :, :]
+        secretImg = allPics[this_batch_size:this_batch_size * 2, :, :, :]
+
+        # 将图片concat到一起，得到六通道图片作为H网络的输入
+        concatImg = torch.cat([coverImg, secretImg], dim=1)
 
         # 数据放入GPU
         if opt.cuda:
             coverImg = coverImg.cuda()
             secretImg = secretImg.cuda()
-            concatImg=concatImg.cuda()
-
-
+            concatImg = concatImg.cuda()
 
         Hinputv = Variable(concatImg)
         originalLabelv = Variable(coverImg)
@@ -200,8 +194,6 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
 
         # R网络的loss  乘以一个超参 β
         betaerrR_secret = opt.beta * errR_secret
-
-
 
         err_sum = errH_original + betaerrR_secret
         SumLosses.update(err_sum.data[0])

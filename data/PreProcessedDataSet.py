@@ -6,8 +6,7 @@ import torch
 from skimage import io
 from PIL import Image
 import os
-from utils.transformed import to_tensor
-from utils.transformed import concat_secretImg
+
 
 
 class PreProcessedDataSet(Dataset):
