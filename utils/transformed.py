@@ -44,7 +44,6 @@ def _is_numpy_image(img):
 
 def concat_secretImg(originalPic):
     resultPic=torch.cat([originalPic, secretImg], 0)
-    print(resultPic.size())
     return resultPic
 
 
@@ -94,7 +93,7 @@ def to_tensor(pic):
         return img
 
 
-secImgPath = "E:\\pyCharm WorkSpace\\deep-steganography\\pytorch-Deep-Steganography\\secretImg\\test.jpg"
+secImgPath = "./secretImg/test.jpg"
 secretImg = Image.open(secImgPath).convert('RGB')
 secretImg = to_tensor(secretImg)
 

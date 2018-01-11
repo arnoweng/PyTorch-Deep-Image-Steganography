@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="8a355133-83e8-45c0-8060-3e5eead59aa9" name="pkumi1@tencentCloud" url="http://muziyongshixin.cn">
+        <fileTransfer host="muziyongshixin.cn" port="10067" rootFolder="/scratch/liyz" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="10067" />
+        </fileTransfer>
+      </webServer>
+      <webServer id="744b6404-c5b9-452a-9761-419b7bfd802c" name="pkumi1@icst" url="http://172.31.200.167">
+        <fileTransfer host="172.31.200.167" port="22" rootFolder="/scratch/liyz" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+      <webServer id="61970c27-6fdc-4623-a3e0-6793bc79c2dd" name="pkumi1@pc" url="http://pc.liyongzhi.xyz">
+        <fileTransfer host="pc.liyongzhi.xyz" port="10067" rootFolder="/scratch/liyz" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="10067" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

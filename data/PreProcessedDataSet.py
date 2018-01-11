@@ -6,6 +6,8 @@ import torch
 from skimage import io
 from PIL import Image
 import os
+from utils.transformed import to_tensor
+from utils.transformed import concat_secretImg
 
 
 class PreProcessedDataSet(Dataset):
@@ -43,7 +45,9 @@ class PreProcessedDataSet(Dataset):
 
         if self.transform is not None:
             image = self.transform(image)
-            label = image  #label即为原始图片
+            label = image
+            image=concat_secretImg(image)
+
 
         return image, label
 

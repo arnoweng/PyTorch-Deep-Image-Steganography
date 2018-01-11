@@ -32,8 +32,7 @@ class Get_dataset():
                                        image_list_file=self.image_list_file,
                                        transform=transforms.Compose([
                                            transforms.Resize(self.imageSize),
-                                           transforms.ToTensor(),
-                                           transforms.ConcatSec(),
+                                           transforms.ToTensor(),  # transforms.ConcatSec(),
                                            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
                                        ]))
 
