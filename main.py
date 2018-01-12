@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import argparse
 import os
-import random
 import time
 
 import torch
@@ -12,16 +11,13 @@ import torch.nn.parallel
 import torch.optim as optim
 import torch.utils.data
 import torchvision.utils as vutils
-from PIL import Image
+from tensorboardX import SummaryWriter
 from torch.autograd import Variable
 
 from data.read_data import Get_dataset
-from models.Discriminator import Discriminator
 from models.HidingNet import HidingNet
 from models.RevealNet import RevealNet
-from utils.transformed import to_tensor
-from tensorboardX import SummaryWriter
-
+from models.HidingUNet import UnetGenerator
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default="test", help='cifar10 | lsun | imagenet | folder | lfw | fake')
@@ -64,9 +60,18 @@ def weights_init(m):
         m.bias.data.fill_(0)
 
 
+# print the structure and parameters number of the net
+def print_network(net):
+    num_params = 0
+    for param in net.parameters():
+        num_params += param.numel()
+    print(net)
+    print('Total number of parameters: %d' % num_params)
+
+
 def main():
     ################ define global parameters #################
-    global opt, label, real_label, fake_label, fixed_cover_with_sec, noise, optimizerH, optimizerR, ndf, ngf, nz, nc, input, secretLabel, originalLabel, secretImg, writer
+    global opt, optimizerH, optimizerR, writer
 
     writer = SummaryWriter()
 
@@ -106,25 +111,21 @@ def main():
     ngpu = int(opt.ngpu)  # 使用多少GPU
 
     #######################  获得G网络的对象  ####################
-    Hnet = HidingNet(ngpu=ngpu)
+    #
+    Hnet=UnetGenerator(input_nc=6, output_nc=3, num_downs=7, ngf=64,norm_layer=nn.BatchNorm2d, use_dropout=False)
     Hnet.apply(weights_init)
     if opt.Hnet != '':
         Hnet.load_state_dict(torch.load(opt.Hnet))
-    print(Hnet)
+    print_network(Hnet)
 
     ######################   获得D网络的对象  ######################
     Rnet = RevealNet(ngpu=ngpu)
     Rnet.apply(weights_init)
     if opt.Rnet != '':
         Rnet.load_state_dict(torch.load(opt.Rnet))
-    print(Rnet)
+    print_network(Rnet)
 
-    # input = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)
-    #
-    # originalLabel = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)  # 原始的图片作为label
-    # secretLabel = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)  # 藏入的图片的label
-
-    ################   定义loss函数     ########################
+    ################   定义L2 loss函数     ########################
     mycriterion = nn.MSELoss()
 
     ##########################    将计算图放置到GPU     ######################
@@ -168,7 +169,6 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
         Rnet.zero_grad()
         allPics, _ = data
         this_batch_size = int(allPics.size(0) / 2)
-
 
         # 前面一半图片作为cover image ，后面一半图片作为secretImg
         coverImg = allPics[0:this_batch_size, :, :, :]
