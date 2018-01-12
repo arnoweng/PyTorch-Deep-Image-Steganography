@@ -20,6 +20,8 @@ from models.Discriminator import Discriminator
 from models.HidingNet import HidingNet
 from models.RevealNet import RevealNet
 from utils.transformed import to_tensor
+from tensorboardX import SummaryWriter
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default="test", help='cifar10 | lsun | imagenet | folder | lfw | fake')
@@ -64,7 +66,9 @@ def weights_init(m):
 
 def main():
     ################ define global parameters #################
-    global opt, label, real_label, fake_label, fixed_cover_with_sec, noise, optimizerH, optimizerR, ndf, ngf, nz, nc, input, secretLabel, originalLabel, secretImg
+    global opt, label, real_label, fake_label, fixed_cover_with_sec, noise, optimizerH, optimizerR, ndf, ngf, nz, nc, input, secretLabel, originalLabel, secretImg, writer
+
+    writer = SummaryWriter()
 
     #################  输出参数   ###############
     opt = parser.parse_args()
@@ -121,7 +125,7 @@ def main():
     # secretLabel = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)  # 藏入的图片的label
 
     ################   定义loss函数     ########################
-    mycriterion = nn.MSELoss(size_average=False)
+    mycriterion = nn.MSELoss()
 
     ##########################    将计算图放置到GPU     ######################
     if opt.cuda:
@@ -141,6 +145,8 @@ def main():
         adjust_learning_rate([optimizerH, optimizerR], epoch)
 
         train(traindataloader, epoch, Hnet=Hnet, Rnet=Rnet, criterion=mycriterion)
+
+    writer.close()
 
 
 def train(train_loader, epoch, Hnet, Rnet, criterion):
@@ -182,7 +188,7 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
 
         ContainerImg = Hnet(Hinputv)  # 得到藏有secretimg的containerImg
         errH_original = criterion(ContainerImg, originalLabelv)  # Hiding net的重建误差
-        Hlosses.update(errH_original.data[0])  # 纪录H loss值
+        Hlosses.update(errH_original.data[0], this_batch_size)  # 纪录H loss值
 
         # errH_original.backward()
         # optimizerH.step()  # 更新Hiding网络
@@ -190,13 +196,13 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
         RevSecPic = Rnet(ContainerImg)
         secretLabelv = Variable(secretImg)  # label 为secret图片
         errR_secret = criterion(RevSecPic, secretLabelv)
-        Rlosses.update(errR_secret.data[0])  # 纪录R loss值
+        Rlosses.update(errR_secret.data[0], this_batch_size)  # 纪录R loss值
 
         # R网络的loss  乘以一个超参 β
         betaerrR_secret = opt.beta * errR_secret
 
         err_sum = errH_original + betaerrR_secret
-        SumLosses.update(err_sum.data[0])
+        SumLosses.update(err_sum.data[0], this_batch_size)
         err_sum.backward()
         optimizerH.step()
         optimizerR.step()
@@ -224,7 +230,7 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
 
         ######################################   存储记录等相关操作       #######################################3
 
-        # 5个epoch就生成一张图片
+        # 100个step就生成一张图片
         if epoch % 1 == 0 and i % 100 == 0:
             showContainer = torch.cat([originalLabelv.data, ContainerImg.data], 0)
             # vutils.save_image(showContainer, '%s/containers_epoch%03d_batch%04d.png' % (opt.outpics, epoch, i),
@@ -240,6 +246,11 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
             vutils.save_image(resultImg, '%s/ResultPics_epoch%03d_batch%04d.png' % (opt.outpics, epoch, i),
                               nrow=this_batch_size,
                               normalize=True)
+
+    if epoch % 1 == 0:
+        writer.add_scalar('train/R_loss', Rlosses.avg, epoch)
+        writer.add_scalar('train/H_loss', Hlosses.avg, epoch)
+        writer.add_scalar('train/sum_loss', SumLosses.avg, epoch)
 
     if epoch % 5 == 0:
         # do checkpointing
