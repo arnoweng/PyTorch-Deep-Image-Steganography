@@ -1,7 +1,7 @@
 import os
 import random
 
-dir="/scratch/wxy/ImageNet/dataset/"
+dir="/scratch/liyz/pytorch-Deep-Steganography/dataset"
 
 fileList=[]
 for root, dirs, files in os.walk(dir):
@@ -12,7 +12,7 @@ for root, dirs, files in os.walk(dir):
 print(len(fileList))
 slice = random.sample(fileList, 5000)
 print(len(slice))
-txtName = "filelist.txt"
+txtName = "filelist_liyz.txt"
 f=open(txtName, "w")
 for file in slice:
     f.write(file+"\n")

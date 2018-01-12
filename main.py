@@ -37,7 +37,7 @@ parser.add_argument('--Rnet', default='', help="path to Revealnet (to continue t
 parser.add_argument('--outpics', default='./training/pics', help='folder to output images')
 parser.add_argument('--outckpts', default='./training/checkpoints', help='folder to output checkpoints')
 parser.add_argument('--outlogs', default='./training/logs', help='folder to output images')
-parser.add_argument('--beta', type=float, default=0.5, help='hyper parameter of β ')
+parser.add_argument('--beta', type=float, default=1.0, help='hyper parameter of β ')
 
 
 def adjust_learning_rate(optimizers, epoch):
@@ -125,8 +125,8 @@ def main():
         Rnet.load_state_dict(torch.load(opt.Rnet))
     print_network(Rnet)
 
-    ################   定义L2 loss函数     ########################
-    mycriterion = nn.MSELoss()
+    ################   定义L1 loss函数     ########################
+    mycriterion = nn.L1Loss()
 
     ##########################    将计算图放置到GPU     ######################
     if opt.cuda:
