@@ -40,7 +40,7 @@ class PreProcessedDataSet(Dataset):
         """
         image_name = self.image_names[index]
         image = Image.open(image_name).convert('RGB')
-        label = -1 # 图片数据不需要label
+        label = -1  # 图片数据不需要label
 
         if self.transform is not None:
             image = self.transform(image)

@@ -73,15 +73,17 @@ def main():
     ################ define global parameters #################
     global opt, optimizerH, optimizerR, writer
 
+    # tensorboardX writer
     writer = SummaryWriter()
 
-    #################  输出参数   ###############
+    #################  输出配置参数   ###############
     opt = parser.parse_args()
     print(opt)
 
     if torch.cuda.is_available() and not opt.cuda:
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
-    #####################################
+
+    cudnn.benchmark = True
 
     ############  构建结果保存的文件夹 #############
     try:
@@ -97,28 +99,23 @@ def main():
             os.makedirs(opt.outlogs)
     except OSError:
         print("mkdir failed   XXXXXXXXXXXXXXXXXXXXX")
-    ###########################################
-
-    cudnn.benchmark = True
 
     ##############   获取数据集   ############################
     print(opt.dataset)
-
     dataset = Get_dataset(dataset_name=opt.dataset, imageSize=[opt.imageSize, opt.imageSize], data_dir=opt.dataroot,
                           image_list_file=opt.train_image_list).get_dataset()
     assert dataset
 
     ngpu = int(opt.ngpu)  # 使用多少GPU
-
-    #######################  获得G网络的对象  ####################
-    #
-    Hnet=UnetGenerator(input_nc=6, output_nc=3, num_downs=7, ngf=64,norm_layer=nn.BatchNorm2d, use_dropout=False)
+    #######################  获得Hiding网络的对象  ####################
+    Hnet = UnetGenerator(input_nc=6, output_nc=3, num_downs=7, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False)
     Hnet.apply(weights_init)
+    # 判断是否接着之前的训练
     if opt.Hnet != '':
         Hnet.load_state_dict(torch.load(opt.Hnet))
     print_network(Hnet)
 
-    ######################   获得D网络的对象  ######################
+    ######################   获得Reveal网络的对象  ######################
     Rnet = RevealNet(ngpu=ngpu)
     Rnet.apply(weights_init)
     if opt.Rnet != '':
@@ -135,27 +132,27 @@ def main():
         mycriterion.cuda()
 
     # setup optimizer
-    optimizerH = optim.Adam(Hnet.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
-    optimizerR = optim.Adam(Rnet.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+    optimizerH = optim.Adam(Hnet.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))  # 优化H网络的参数
+    optimizerR = optim.Adam(Rnet.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))  # 优化R网络的参数
 
     print("training is beginning .......................")
     traindataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize, shuffle=True,
                                                   num_workers=int(opt.workers))
 
     for epoch in range(opt.niter):
-        adjust_learning_rate([optimizerH, optimizerR], epoch)
-
+        adjust_learning_rate([optimizerH, optimizerR], epoch)  # 调整学习速率
         train(traindataloader, epoch, Hnet=Hnet, Rnet=Rnet, criterion=mycriterion)
 
     writer.close()
 
 
+# 训练函数
 def train(train_loader, epoch, Hnet, Rnet, criterion):
     batch_time = AverageMeter()
     data_time = AverageMeter()
-    Hlosses = AverageMeter()
-    Rlosses = AverageMeter()
-    SumLosses = AverageMeter()
+    Hlosses = AverageMeter()  # 纪录每个epoch H网络的loss
+    Rlosses = AverageMeter()  # 纪录每个epoch R网络的loss
+    SumLosses = AverageMeter()  # 纪录每个epoch Hloss + β*Rloss
 
     # switch to train mode
     Hnet.train()
@@ -167,10 +164,10 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
 
         Hnet.zero_grad()
         Rnet.zero_grad()
-        allPics, _ = data
-        this_batch_size = int(allPics.size(0) / 2)
+        allPics, _ = data                           # allpics包含coverImg 和 secretImg,不需要label
+        this_batch_size = int(allPics.size(0) / 2)  # 处理每个epoch 最后一个batch可能不足opt.bachsize
 
-        # 前面一半图片作为cover image ，后面一半图片作为secretImg
+        # 前面一半图片作为coverImg ，后面一半图片作为secretImg
         coverImg = allPics[0:this_batch_size, :, :, :]
         secretImg = allPics[this_batch_size:this_batch_size * 2, :, :, :]
 
@@ -183,19 +180,16 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
             secretImg = secretImg.cuda()
             concatImg = concatImg.cuda()
 
-        Hinputv = Variable(concatImg)
-        originalLabelv = Variable(coverImg)
+        Hinputv = Variable(concatImg)        # concatImg 作为H网络的输入
+        originalLabelv = Variable(coverImg)  # coverImg 作为H网络的label
 
-        ContainerImg = Hnet(Hinputv)  # 得到藏有secretimg的containerImg
+        ContainerImg = Hnet(Hinputv)         # 得到藏有secretimg的containerImg
         errH_original = criterion(ContainerImg, originalLabelv)  # Hiding net的重建误差
-        Hlosses.update(errH_original.data[0], this_batch_size)  # 纪录H loss值
+        Hlosses.update(errH_original.data[0], this_batch_size)   # 纪录H loss值
 
-        # errH_original.backward()
-        # optimizerH.step()  # 更新Hiding网络
-
-        RevSecPic = Rnet(ContainerImg)
-        secretLabelv = Variable(secretImg)  # label 为secret图片
-        errR_secret = criterion(RevSecPic, secretLabelv)
+        RevSecImg = Rnet(ContainerImg)       # containerImg作为R网络的输入 得到RevSecImg
+        secretLabelv = Variable(secretImg)   # secretImg作为R网络的label
+        errR_secret = criterion(RevSecImg, secretLabelv)  # Reveal net的重建误差
         Rlosses.update(errR_secret.data[0], this_batch_size)  # 纪录R loss值
 
         # R网络的loss  乘以一个超参 β
@@ -203,10 +197,11 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
 
         err_sum = errH_original + betaerrR_secret
         SumLosses.update(err_sum.data[0], this_batch_size)
+        # 计算梯度
         err_sum.backward()
+        # 优化两个网络的参数
         optimizerH.step()
         optimizerR.step()
-
         # 更新一个batch的时间
         batch_time.update(time.time() - start_time)
         start_time = time.time()
@@ -236,28 +231,31 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
             # vutils.save_image(showContainer, '%s/containers_epoch%03d_batch%04d.png' % (opt.outpics, epoch, i),
             #                   nrow=this_batch_size,
             #                   normalize=True)
-            showReveal = torch.cat([secretLabelv.data, RevSecPic.data], 0)
+            showReveal = torch.cat([secretLabelv.data, RevSecImg.data], 0)
 
             # vutils.save_image(showReveal, '%s/RevSecPics_epoch%03d_batch%04d.png' % (opt.outpics, epoch, i),
             #                   nrow=this_batch_size,
             #                   normalize=True)
 
+            # resultImg 包含四行，每一行依次是 coverImg containerImg secretImg RevSecImg，总共opt.batchsize/2列
             resultImg = torch.cat([showContainer, showReveal], 0)
             vutils.save_image(resultImg, '%s/ResultPics_epoch%03d_batch%04d.png' % (opt.outpics, epoch, i),
                               nrow=this_batch_size,
                               normalize=True)
 
+    # 每个epoch纪录一次平均loss 在tensorboard展示
     if epoch % 1 == 0:
         writer.add_scalar('train/R_loss', Rlosses.avg, epoch)
         writer.add_scalar('train/H_loss', Hlosses.avg, epoch)
         writer.add_scalar('train/sum_loss', SumLosses.avg, epoch)
-
+    # 每5个epoch 保存一次模型结果
     if epoch % 5 == 0:
         # do checkpointing
         torch.save(Hnet.state_dict(), '%s/netG_epoch_%d.pth' % (opt.outckpts, epoch))
         torch.save(Rnet.state_dict(), '%s/netD_epoch_%d.pth' % (opt.outckpts, epoch))
 
-    print("one epoch time is===========================================", batch_time.sum)
+    # 输出一个epoch所用时间
+    print("one epoch time is======================================================================", batch_time.sum)
 
 
 class AverageMeter(object):
