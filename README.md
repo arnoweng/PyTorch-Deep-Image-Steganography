@@ -16,7 +16,7 @@ pip install -r requirements.txt
 If you just want to inference the model, you can type like this:
 ```bash
 # because the filesize is limited to 100MB, so the model is separated into 2 file netH.tar.gz.1 and netH.tar.gz.2 in the checkPoint folder
-cat ./checkPoint/netH.tar.gz.* | tar -zxv 
+cat ./checkPoint/netH.tar.gz* | tar -xzv -C ./checkPoint/
 CUDA_VISIBLE_DEVICES=0 python main.py --test=./example_pics
 ```
 You can also use your own image folder to replace the example_pics, just need to provide the correct path.
@@ -45,16 +45,14 @@ The goal is to 'hide' the secret image in the cover image Through a Hiding net s
 Then , this hidden image can be passed to a Revealing network, which can get the hidden image back, and this is called rev_secret img(the 4th row).
 ### Result Picture
 
-
-
-![Current System State](results/1.png)
+<img src = 'result/1.png'>
 As you can see, it is visually very hard to find the difference between the cover image and the contianer image. Yet the Reveal network can get back the information of the secret image only with tiny deviation. (If you can not notice the tiny deviation, you can download the picture to zoom in)
 
-###Tiny Deviations 
+### Tiny Deviations 
 * deviation between cover and contianer 
 <table align='center'>
 <tr align='center'>
-<td> cover image </td>lt
+<td> cover image </td>
 <td> container image </td>
 </tr>
 <tr>
@@ -68,7 +66,7 @@ As you can see, it is visually very hard to find the difference between the cove
 * deviation between secret and revealed secret 
 <table align='center'>
 <tr align='center'>
-<td> secret image </td>lt
+<td> secret image </td>
 <td> revealed secret image </td>
 </tr>
 <tr>
@@ -82,7 +80,7 @@ As you can see, it is visually very hard to find the difference between the cove
 
 
 
-###Network Architecture 
+### Network Architecture 
 - Unlike the [[1]](https://papers.nips.cc/paper/6802-hiding-images-in-plain-sight-deep-steganography), we just used two nets to get the result, one Hding net and one Reveal net.
 - For the Hiding net, an Unet structred convolutional network was used to achive this goal. Cover image and secret image are concatenated into a 6 channels tensor as the input of the Hiding net.
 - For Revealing net, there are 6 conv layers with 3*3 kernel size, and each layer is followed by a BN and ReLU except the last one. Contianer img produced by the Hiding net is used as the input of the Revealing net directly.
@@ -93,7 +91,7 @@ Two networks were trained with beta values 0.75), batch size of 32(16 covers and
 * Loss curves on Hiding net and Revealing net 
 <table align='center'>
 <tr align='center'>
-<td> MSE loss on cover and contianer </td>lt
+<td> MSE loss on cover and contianer </td>
 <td> MSE loss on secret and revealed secret</td>
 </tr>
 <tr>
