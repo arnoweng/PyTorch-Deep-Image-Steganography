@@ -84,7 +84,7 @@ As you can see, it is visually very hard to find the difference between the cove
 
 
 ### Network Architecture 
-- Unlike the [[1]](https://papers.nips.cc/paper/6802-hiding-images-in-plain-sight-deep-steganography), we just used two nets to get the result, one Hding net and one Reveal net.
+- Unlike the [[1]](https://papers.nips.cc/paper/6802-hiding-images-in-plain-sight-deep-steganography), we just used two nets to get the result, one Hiding net and one Revealing net.
 - For the Hiding net, an Unet structred convolutional network was used to achive this goal. Cover image and secret image are concatenated into a 6 channels tensor as the input of the Hiding net.
 - For Revealing net, there are 6 conv layers with 3*3 kernel size, and each layer is followed by a BN and ReLU except the last one. Contianer img produced by the Hiding net is used as the input of the Revealing net directly.
 - For more details of the network architecture, you can just read the source code which is in the models folder
