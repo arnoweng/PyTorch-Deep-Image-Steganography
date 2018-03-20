@@ -1,5 +1,8 @@
 # pytorch-Deep-Steganography
 
+<img src = 'result/title.png'>
+
+
 ## Introduction
 This is a pytorch Implementation of image steganography using deep convolutional neural networks ,which is similar to the paper: "[Hiding Images in Plain Sight: Deep Steganography](https://papers.nips.cc/paper/6802-hiding-images-in-plain-sight-deep-steganography) ".But our result is signiﬁcantly outperforms the [unofficial implementation by harveyslash](https://github.com/harveyslash/Deep-Steganography) 
 
@@ -100,8 +103,8 @@ Two networks were trained with beta values 0.75), batch size of 32(16 covers and
 </tr>
 </table>
 
-
-Dataset| contianer - cover(APD)    (0-255)| secret - rev_secret(APD)      (0-255)|
+* Averaged pixel-wise discrepancy
+Dataset| contianer - cover(APD)    (0-255)| secret - rev_secret(APD)     (0-255)|
 ----|----------------| --------------------|
 training| 4.20 |4.73 |
 validation|4.16 |4.40 |
