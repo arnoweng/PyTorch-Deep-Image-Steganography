@@ -103,8 +103,8 @@ Two networks were trained with beta values 0.75), batch size of 32(16 covers and
 </tr>
 </table>
 
-
-Dataset| contianer - cover(APD)    (0-255)| secret - rev_secret(APD)      (0-255)|
+* Averaged pixel-wise discrepancy
+Dataset| contianer - cover(APD)    (0-255)| secret - rev_secret(APD)     (0-255)|
 ----|----------------| --------------------|
 training| 4.20 |4.73 |
 validation|4.16 |4.40 |
