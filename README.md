@@ -1,4 +1,4 @@
-# pytorch-Deep-Steganography
+# pytorch-Deep-Image-Steganography
 
 <img src = 'result/title.png'>
 
@@ -6,7 +6,7 @@
 ## Introduction
 This is a pytorch Implementation of image steganography using deep convolutional neural networks ,which is similar to the paper: "[Hiding Images in Plain Sight: Deep Steganography](https://papers.nips.cc/paper/6802-hiding-images-in-plain-sight-deep-steganography) ".But our result is signiﬁcantly outperforms the [unofficial implementation by harveyslash](https://github.com/harveyslash/Deep-Steganography) 
 
-[Image Steganography](https://en.wikipedia.org/wiki/Steganography) is the science of Hiding a message in another message. In this case, a Picture is hidden inside another picture using Deep convolutional neural networks.
+[Steganography](https://en.wikipedia.org/wiki/Steganography) is the science of Hiding a message in another message. In this case, a Picture is hidden inside another picture using Deep convolutional neural networks.
 
 More detail information can be found in my [Blog](http://ssss)
 
@@ -41,7 +41,7 @@ CUDA_VISIBLE_DEVICES=0 python main.py
 
 
 ## Framework & Results
-The Framework takes in Two images. One is the cover image(the 1st row) and another is the secret image(the 3nd row) . 
+The Framework takes in Two images. One is the cover image(the 1st row) and another is the secret image(the 3rd row) . 
 
 The goal is to 'hide' the secret image in the cover image Through a Hiding net such that only the cover image is visible. This is called container image(the 2nd row)
 
