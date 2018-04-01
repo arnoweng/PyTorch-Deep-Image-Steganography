@@ -115,4 +115,4 @@ validation|4.16 |4.40 |
 [1] Baluja S. Hiding Images in Plain Sight: Deep Steganography[C]//Advances in Neural Information Processing Systems. 2017: 2066-2076.
 
 ## Acknowledgement
-Thanks for the help of [@arnoweng](https://github.com/arnoweng) during this project. At the same time, I am very grateful to [Prof.Yadong Mu](http://www.muyadong.com) for his guidance. 
+Thanks for the help of [@arnoweng](https://github.com/arnoweng) during this project. 
