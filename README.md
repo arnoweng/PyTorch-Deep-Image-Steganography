@@ -6,7 +6,7 @@
 ## Introduction
 This is a PyTorch implementation of image steganography via deep learning, which is similar to the work in paper "[Hiding Images in Plain Sight: Deep Steganography](https://papers.nips.cc/paper/6802-hiding-images-in-plain-sight-deep-steganography) ". Our result signiﬁcantly outperforms the [unofficial implementation by harveyslash](https://github.com/harveyslash/Deep-Steganography).
 
-[Steganography](https://en.wikipedia.org/wiki/Steganography) is the science of unobtrusively concealing a secret message within some cover data. In this case, a full-sized color image is hidden inside another image with minimal changes in appearance utilizing deep convolutional neural networks .
+[Steganography](https://en.wikipedia.org/wiki/Steganography) is the science of unobtrusively concealing a secret message within some cover data. In this case, a full-sized color image is hidden inside another image with minimal changes in appearance utilizing deep convolutional neural networks.
 
 ## Dependencies & Installation & Usage
 1. Clone or download this repository
@@ -83,8 +83,8 @@ As you can see, it is visually very hard to find out the difference between cove
 
 ### Network Architecture 
 - Unlike [[1]](https://papers.nips.cc/paper/6802-hiding-images-in-plain-sight-deep-steganography), we only used two nets(H-net and R-net) to get this result.
-- For the H-net, an U-net structured convolutional network was selected to achive this goal. Cover image and secret image are concatenated into a 6 channels tensor as the input of the Hiding net.
-- For R-net, there are 6 conv layers with 3*3 kernel size, and each layer is followed by a BN and ReLU except the last one. Contianer images produced by H-net are taken as input of R-net directly.
+- For the H-net, an U-net structured convolutional network was selected to achieve this goal. Cover image and secret image are concatenated into a 6-channel tensor as the input of the H-net.
+- For R-net, there are 6 conv layers with 3×3 kernel size, and each layer is followed by a BN and ReLU except the last one. Contianer images produced by H-net are taken as input of R-net directly.
 
 ### Loss Curves & Averaged pixel-wise discrepancy (APD) 
 Two networks were trained with a hyper-parameter with an empirical value 0.75 to balance the visual performance of cover images and revealed secret images. Batch size was set to 32(16 covers and 16 secrets). The loss curves are shown below.
