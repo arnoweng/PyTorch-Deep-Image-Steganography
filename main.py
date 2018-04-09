@@ -101,7 +101,7 @@ def print_network(net):
     print_log('Total number of parameters: %d' % num_params, logPath)
 
 
-# 保存本次实验的代码
+# save code of current experiment
 def save_current_codes(des_path):
     main_file_path = os.path.realpath(__file__)  # eg：/n/liyz/videosteganography/main.py
     cur_work_dir, mainfile = os.path.split(main_file_path)  # eg：/n/liyz/videosteganography/
@@ -126,7 +126,7 @@ def main():
     ############### define global parameters ###############
     global opt, optimizerH, optimizerR, writer, logPath, schedulerH, schedulerR, val_loader, smallestLoss
 
-    #################  输出配置参数   ###############
+    #################  output configuration   ###############
     opt = parser.parse_args()
 
     if torch.cuda.is_available() and not opt.cuda:
@@ -135,7 +135,7 @@ def main():
 
     cudnn.benchmark = True
 
-    ############  create the dirs to save the result #############
+    ############  create dirs to save the result #############
     if not opt.debug:
         try:
             cur_time = time.strftime('%Y-%m-%d-%H_%M_%S', time.localtime())
@@ -164,30 +164,26 @@ def main():
 
     logPath = opt.outlogs + '/%s_%d_log.txt' % (opt.dataset, opt.batchSize)
 
-    # 保存模型的参数
     print_log(str(opt), logPath)
-    # 保存本次实验的代码
     save_current_codes(opt.outcodes)
 
     if opt.test == '':
         # tensorboardX writer
         writer = SummaryWriter(comment='**' + opt.remark)
-        ##############   获取数据集   ############################
+        ##############   get dataset   ############################
         traindir = os.path.join(DATA_DIR, 'train')
         valdir = os.path.join(DATA_DIR, 'val')
         train_dataset = MyImageFolder(
-            traindir,  # 对数据进行预处理
-            transforms.Compose([  # 将几个transforms 组合在一起
-                transforms.Resize([opt.imageSize, opt.imageSize]),  # 随机切再resize成给定的size大小
+            traindir,
+            transforms.Compose([
+                transforms.Resize([opt.imageSize, opt.imageSize]),  # resize to a given size
                 transforms.ToTensor(),
-                # 把一个取值范围是[0,255]或者shape为(H,W,C)的numpy.ndarray，转换成形状为[C,H,W]，取值范围是[0,1.0]的torch.FloadTensor
             ]))
         val_dataset = MyImageFolder(
-            valdir,  # 对数据进行预处理
-            transforms.Compose([  # 将几个transforms 组合在一起
-                transforms.Resize([opt.imageSize, opt.imageSize]),  # 随机切再resize成给定的size大小
-                transforms.ToTensor(),  # 把一个取值范围是[0,255]或者shape为(H,W,C)的numpy.ndarray，
-                # 转换成形状为[C,H,W]，取值范围是[0,1.0]的torch.FloadTensor
+            valdir,
+            transforms.Compose([
+                transforms.Resize([opt.imageSize, opt.imageSize]),
+                transforms.ToTensor(),
             ]))
         assert train_dataset
         assert val_dataset
@@ -196,30 +192,23 @@ def main():
         opt.Rnet = "./checkPoint/netR_epoch_73,sumloss=0.000447,Rloss=0.000252.pth"
         testdir = opt.test
         test_dataset = MyImageFolder(
-            testdir,  # 对数据进行预处理
-            transforms.Compose([  # 将几个transforms 组合在一起
-                transforms.Resize([opt.imageSize, opt.imageSize]),  # 随机切再resize成给定的size大小
+            testdir,
+            transforms.Compose([
+                transforms.Resize([opt.imageSize, opt.imageSize]),
                 transforms.ToTensor(),
-                # 把一个取值范围是[0,255]或者shape为(H,W,C)的numpy.ndarray，转换成形状为[C,H,W]，取值范围是[0,1.0]的torch.FloadTensor
             ]))
         assert test_dataset
-
-    ##################  获得Hiding网络的对象  #################
-    # Hnet = UnetGenerator(input_nc=144, output_nc=72, num_downs=7, ngf=128,
-    #                      norm_layer=nn.BatchNorm2d, use_dropout=False)
 
     Hnet = UnetGenerator(input_nc=6, output_nc=3, num_downs=7, output_function=nn.Sigmoid)
     Hnet.cuda()
     Hnet.apply(weights_init)
-    # 判断是否接着之前的训练
+    # whether to load pre-trained model
     if opt.Hnet != "":
         Hnet.load_state_dict(torch.load(opt.Hnet))
-    # 两块卡加这行
     if opt.ngpu > 1:
         Hnet = torch.nn.DataParallel(Hnet).cuda()
     print_network(Hnet)
 
-    ################   获得Reveal网络的对象  ################
     Rnet = RevealNet(output_function=nn.Sigmoid)
     Rnet.cuda()
     Rnet.apply(weights_init)
@@ -270,7 +259,7 @@ def main():
 
         writer.close()
 
-     # test mode
+    # test mode
     else:
         test_loader = DataLoader(test_dataset, batch_size=opt.batchSize,
                                  shuffle=False, num_workers=int(opt.workers))
@@ -281,9 +270,9 @@ def main():
 def train(train_loader, epoch, Hnet, Rnet, criterion):
     batch_time = AverageMeter()
     data_time = AverageMeter()
-    Hlosses = AverageMeter()  # 纪录每个epoch H网络的loss
-    Rlosses = AverageMeter()  # 纪录每个epoch R网络的loss
-    SumLosses = AverageMeter()  # 纪录每个epoch Hloss + β*Rloss
+    Hlosses = AverageMeter()  # record loss of H-net
+    Rlosses = AverageMeter()  # record loss of R-net
+    SumLosses = AverageMeter()  # record Hloss + β*Rloss
 
     # switch to train mode
     Hnet.train()
@@ -296,66 +285,60 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
         Hnet.zero_grad()
         Rnet.zero_grad()
 
-        all_pics = data  # allpics包含coverImg 和 secretImg,不需要label
-        this_batch_size = int(all_pics.size()[0] / 2)  # 处理每个epoch 最后一个batch可能不足opt.bachsize
+        all_pics = data  # allpics contains cover images and secret images
+        this_batch_size = int(all_pics.size()[0] / 2)  # get true batch size of this step 
 
-        # 前面一半图片作为coverImg ，后面一半图片作为secretImg
+        # first half of images will become cover images, the rest are treated as secret images
         cover_img = all_pics[0:this_batch_size, :, :, :]  # batchsize,3,256,256
         secret_img = all_pics[this_batch_size:this_batch_size * 2, :, :, :]
 
-        # 将图片concat到一起，得到六通道图片作为H网络的输入
+        # concat cover images and secret images as input of H-net
         concat_img = torch.cat([cover_img, secret_img], dim=1)
 
-        # 数据放入GPU
         if opt.cuda:
             cover_img = cover_img.cuda()
             secret_img = secret_img.cuda()
             concat_img = concat_img.cuda()
 
-        concat_imgv = Variable(concat_img)  # concatImg 作为H网络的输入
-        cover_imgv = Variable(cover_img)  # coverImg 作为H网络的label
+        concat_imgv = Variable(concat_img)
+        cover_imgv = Variable(cover_img)
 
-        container_img = Hnet(concat_imgv)  # 得到藏有secretimg的containerImg
-        errH = criterion(container_img, cover_imgv)  # Hiding net的重建误差
-        Hlosses.update(errH.data[0], this_batch_size)  # 纪录H loss值
+        container_img = Hnet(concat_imgv)  # put concat_image into H-net and get container image
+        errH = criterion(container_img, cover_imgv)  # loss between cover and container
+        Hlosses.update(errH.data[0], this_batch_size)
 
-        rev_secret_img = Rnet(container_img)  # containerImg作为R网络的输入 得到RevSecImg
-        secret_imgv = Variable(secret_img)  # secretImg作为R网络的label
-        errR = criterion(rev_secret_img, secret_imgv)  # Reveal net的重建误差
-        Rlosses.update(errR.data[0], this_batch_size)  # 纪录R loss值
+        rev_secret_img = Rnet(container_img)  # put concatenated image into R-net and get revealed secret image
+        secret_imgv = Variable(secret_img)
+        errR = criterion(rev_secret_img, secret_imgv)  # loss between secret image and revealed secret image
+        Rlosses.update(errR.data[0], this_batch_size)
 
         betaerrR_secret = opt.beta * errR
         err_sum = errH + betaerrR_secret
         SumLosses.update(err_sum.data[0], this_batch_size)
-        # 计算梯度
+
         err_sum.backward()
 
-        # 优化两个网络的参数
         optimizerH.step()
         optimizerR.step()
 
-        # 更新一个batch的时间
         batch_time.update(time.time() - start_time)
         start_time = time.time()
 
-        # 日志信息
         log = '[%d/%d][%d/%d]\tLoss_H: %.4f Loss_R: %.4f Loss_sum: %.4f \tdatatime: %.4f \tbatchtime: %.4f' % (
             epoch, opt.niter, i, len(train_loader),
             Hlosses.val, Rlosses.val, SumLosses.val, data_time.val, batch_time.val)
 
-        # 屏幕打印日志信息
         if i % opt.logFrequency == 0:
             print_log(log, logPath)
         else:
             print_log(log, logPath, console=False)
 
-        #######################################   存储记录等相关操作       #######################################3
-        # 100个step就生成一张图片
+        # genereate a picture every resultPicFrequency steps
         if epoch % 1 == 0 and i % opt.resultPicFrequency == 0:
             save_result_pic(this_batch_size, cover_img, container_img.data, secret_img, rev_secret_img.data, epoch, i,
                             opt.trainpics)
 
-    # 输出一个epoch所用时间
+    # epcoh log
     epoch_log = "one epoch time is %.4f======================================================================" % (
         batch_time.sum) + "\n"
     epoch_log = epoch_log + "epoch learning rate: optimizerH_lr = %.8f      optimizerR_lr = %.8f" % (
@@ -364,12 +347,13 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
         Hlosses.avg, Rlosses.avg, SumLosses.avg)
     print_log(epoch_log, logPath)
 
+
     if not opt.debug:
-        # 纪录learning rate
+        # record lr
         writer.add_scalar("lr/H_lr", optimizerH.param_groups[0]['lr'], epoch)
         writer.add_scalar("lr/R_lr", optimizerR.param_groups[0]['lr'], epoch)
         writer.add_scalar("lr/beta", opt.beta, epoch)
-        # 每个epoch纪录一次平均loss 在tensorboard展示
+        # record loss
         writer.add_scalar('train/R_loss', Rlosses.avg, epoch)
         writer.add_scalar('train/H_loss', Hlosses.avg, epoch)
         writer.add_scalar('train/sum_loss', SumLosses.avg, epoch)
@@ -381,19 +365,17 @@ def validation(val_loader, epoch, Hnet, Rnet, criterion):
     start_time = time.time()
     Hnet.eval()
     Rnet.eval()
-    Hlosses = AverageMeter()  # 纪录每个epoch H网络的loss
-    Rlosses = AverageMeter()  # 纪录每个epoch R网络的loss
+    Hlosses = AverageMeter()
+    Rlosses = AverageMeter()
     for i, data in enumerate(val_loader, 0):
         Hnet.zero_grad()
         Rnet.zero_grad()
-        all_pics = data  # allpics包含coverImg 和 secretImg,不需要label
-        this_batch_size = int(all_pics.size()[0] / 2)  # 处理每个epoch 最后一个batch可能不足opt.bachsize
+        all_pics = data
+        this_batch_size = int(all_pics.size()[0] / 2)
 
-        # 前面一半图片作为coverImg ，后面一半图片作为secretImg
-        cover_img = all_pics[0:this_batch_size, :, :, :]  # batchsize,3,256,256
+        cover_img = all_pics[0:this_batch_size, :, :, :]
         secret_img = all_pics[this_batch_size:this_batch_size * 2, :, :, :]
 
-        # 将图片concat到一起，得到六通道图片作为H网络的输入
         concat_img = torch.cat([cover_img, secret_img], dim=1)
 
         # 数据放入GPU
@@ -402,17 +384,17 @@ def validation(val_loader, epoch, Hnet, Rnet, criterion):
             secret_img = secret_img.cuda()
             concat_img = concat_img.cuda()
 
-        concat_imgv = Variable(concat_img, volatile=True)  # concatImg 作为H网络的输入
-        cover_imgv = Variable(cover_img, volatile=True)  # coverImg 作为H网络的label
+        concat_imgv = Variable(concat_img, volatile=True)
+        cover_imgv = Variable(cover_img, volatile=True)
 
-        container_img = Hnet(concat_imgv)  # 得到藏有secretimg的containerImg
-        errH = criterion(container_img, cover_imgv)  # Hiding net的重建误差
-        Hlosses.update(errH.data[0], this_batch_size)  # 纪录H loss值
+        container_img = Hnet(concat_imgv)
+        errH = criterion(container_img, cover_imgv)
+        Hlosses.update(errH.data[0], this_batch_size)
 
-        rev_secret_img = Rnet(container_img)  # containerImg作为R网络的输入 得到RevSecImg
-        secret_imgv = Variable(secret_img, volatile=True)  # secretImg作为R网络的label
-        errR = criterion(rev_secret_img, secret_imgv)  # Reveal net的重建误差
-        Rlosses.update(errR.data[0], this_batch_size)  # 纪录R loss值
+        rev_secret_img = Rnet(container_img)
+        secret_imgv = Variable(secret_img, volatile=True)
+        errR = criterion(rev_secret_img, secret_imgv)
+        Rlosses.update(errR.data[0], this_batch_size)
 
         if i % 50 == 0:
             save_result_pic(this_batch_size, cover_img, container_img.data, secret_img, rev_secret_img.data, epoch, i,
@@ -443,39 +425,37 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
     start_time = time.time()
     Hnet.eval()
     Rnet.eval()
-    Hlosses = AverageMeter()  # to record the Hloss in one epoch
-    Rlosses = AverageMeter()  # to record the Rloss in one epoch
+    Hlosses = AverageMeter()  # record the Hloss in one epoch
+    Rlosses = AverageMeter()  # record the Rloss in one epoch
     for i, data in enumerate(test_loader, 0):
         Hnet.zero_grad()
         Rnet.zero_grad()
-        all_pics = data  # allpics contian cover_img and secret_img ,label is not needed
-        this_batch_size = int(all_pics.size()[0] / 2)  # in order to handle the final batch which may not have opt.size
+        all_pics = data  # allpics contains cover images and secret images
+        this_batch_size = int(all_pics.size()[0] / 2)  # get true batch size of this step 
 
-        # half of the front is as cover_img ，half of the end is as secret_img
+        # first half of images will become cover images, the rest are treated as secret images
         cover_img = all_pics[0:this_batch_size, :, :, :]  # batchSize,3,256,256
         secret_img = all_pics[this_batch_size:this_batch_size * 2, :, :, :]
 
-        # concat cover and original secret get the concat_img with 6 channels
+        # concat cover and original secret to get the concat_img with 6 channels
         concat_img = torch.cat([cover_img, secret_img], dim=1)
 
-        # data into GPU
         if opt.cuda:
             cover_img = cover_img.cuda()
             secret_img = secret_img.cuda()
             concat_img = concat_img.cuda()
 
-        concat_imgv = Variable(concat_img, volatile=True)  # concat_img is the input of Hiding net
-        cover_imgv = Variable(cover_img, volatile=True)  # cover_imgv is the label of Hiding net
+        concat_imgv = Variable(concat_img, volatile=True)  # concat_img as input of Hiding net
+        cover_imgv = Variable(cover_img, volatile=True)  # cover_imgv as label of Hiding net
 
-        container_img = Hnet(concat_imgv)  # concat_img as the input of HidingNet and get the container_img
-        errH = criterion(container_img, cover_imgv)  # Hiding net reconstructed error
-        Hlosses.update(errH.data[0], this_batch_size)  # record the H loss value
+        container_img = Hnet(concat_imgv)  # take concat_img as input of H-net and get the container_img
+        errH = criterion(container_img, cover_imgv)  # H-net reconstructed error
+        Hlosses.update(errH.data[0], this_batch_size)
 
-        rev_secret_img = Rnet(
-            container_img)  # containerImg is the input of the Rnet and get the output "rev_secret_img"
-        secret_imgv = Variable(secret_img, volatile=True)  # secret_imgv is the label of Rnet
-        errR = criterion(rev_secret_img, secret_imgv)  # Reveal net reconstructed error
-        Rlosses.update(errR.data[0], this_batch_size)  # record the R loss value
+        rev_secret_img = Rnet(container_img)  # containerImg as input of R-net and get "rev_secret_img"
+        secret_imgv = Variable(secret_img, volatile=True)  # secret_imgv as label of R-net
+        errR = criterion(rev_secret_img, secret_imgv)  # R-net reconstructed error
+        Rlosses.update(errR.data[0], this_batch_size)
         save_result_pic(this_batch_size, cover_img, container_img.data, secret_img, rev_secret_img.data, epoch, i,
                         opt.testPics)
 
@@ -493,14 +473,14 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
     return val_hloss, val_rloss, val_sumloss
 
 
-# print the training log and save into logFiles
+# print training log and save into logFiles
 def print_log(log_info, log_path, console=True):
-    # print the info into the console
+    # print info onto the console
     if console:
         print(log_info)
-    # debug mode don't write the log into files
+    # debug mode will not write logs into files
     if not opt.debug:
-        # write the log into log file
+        # write logs into log file
         if not os.path.exists(log_path):
             fp = open(log_path, "w")
             fp.writelines(log_info + "\n")
@@ -509,7 +489,7 @@ def print_log(log_info, log_path, console=True):
                 f.writelines(log_info + '\n')
 
 
-# save result pic and the coverImg filePath and the secretImg filePath
+# save result pics, coverImg filePath and secretImg filePath
 def save_result_pic(this_batch_size, originalLabelv, ContainerImg, secretLabelv, RevSecImg, epoch, i, save_path):
     if not opt.debug:
         originalFrames = originalLabelv.resize_(this_batch_size, 3, opt.imageSize, opt.imageSize)
@@ -519,7 +499,7 @@ def save_result_pic(this_batch_size, originalLabelv, ContainerImg, secretLabelv,
 
         showContainer = torch.cat([originalFrames, containerFrames], 0)
         showReveal = torch.cat([secretFrames, revSecFrames], 0)
-        # resultImg contains four rows，each row is coverImg containerImg secretImg RevSecImg, total this_batch_size columns
+        # resultImg contains four rows: coverImg, containerImg, secretImg, RevSecImg, total this_batch_size columns
         resultImg = torch.cat([showContainer, showReveal], 0)
         resultImgName = '%s/ResultPics_epoch%03d_batch%04d.png' % (save_path, epoch, i)
         vutils.save_image(resultImg, resultImgName, nrow=this_batch_size, padding=1, normalize=True)

@@ -1,14 +1,10 @@
 # encoding: utf-8
 
 """
-@author: Arno Weng
-@contact: wengxy@pku.edu.cn
 
-@version: 1.0
-@file: transformed.py
-@time: 2017/10/28 18:07
+Adapted from Pytorch transforms.py.
+(https://github.com/pytorch/vision/blob/master/torchvision/transforms/transforms.py)
 
-Copied from Pytorch transforms.py.
 """
 
 import torch
