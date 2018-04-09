@@ -58,8 +58,8 @@ As you can see, it is visually very hard to find out the difference between cove
   <td> container image </td>
   </tr>
   <tr>
-  <td><img src = 'result/cover.png'>
-  <td><img src = 'result/container.png'>
+  <td><img src = 'result/cover.png'  width = "300" height = "300">
+  <td><img src = 'result/container.png'  width = "300" height = "300">
   </tr>
   </table>
 
@@ -72,8 +72,8 @@ As you can see, it is visually very hard to find out the difference between cove
   <td> revealed secret image </td>
   </tr>
   <tr>
-  <td><img src = 'result/secret.png'>
-  <td><img src = 'result/rev_secret.png'>
+  <td><img src = 'result/secret.png'  width = "300" height = "300">
+  <td><img src = 'result/rev_secret.png'  width = "300" height = "300">
   </tr>
   </table>
 
