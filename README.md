@@ -103,9 +103,9 @@ Two networks were trained with a hyper-parameter with an empirical value 0.75 to
 
 * Averaged pixel-wise discrepancy
 
-| Dataset    | Contianer - Cover(APD)    (0-255) | Secret - Rev_Secret(APD)     (0-255) |
-| ---------- | :-------------------------------: | :----------------------------------: |
-| Training   |               4.20                |                 4.73                 |
+|  Dataset   | Contianer - Cover(APD)    (0-255) | Secret - Rev_Secret(APD)     (0-255) |
+| :--------: | :-------------------------------: | :----------------------------------: |
+|  Training  |               4.20                |                 4.73                 |
 | Validation |               4.16                |                 4.40                 |
 
 ## Reference: 
