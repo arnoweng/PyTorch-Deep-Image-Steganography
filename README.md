@@ -108,7 +108,7 @@ Two networks were trained with a hyper-parameter with an empirical value 0.75 to
 |  Training  |               4.20                |                 4.73                 |
 | Validation |               4.16                |                 4.40                 |
 
-## Reference: 
+## Reference
 
 Baluja, S.: Hiding images in plain sight: Deep steganography. In: NIPS. (2017).
 
